@@ -55,3 +55,13 @@ def BollingerBandsDifferentials(lowerBasis, lowerUpper, lowerLower, higherBasis,
 
 def BollingerBandsPercent(high, low, close):
     return (close - low) / (high - low)
+
+# Function for calculating the slope of a line over a provided window.
+# Parameters:
+#       line = The list of values representing the line.
+#       window = The lookback for the slope to be calcuated over.
+# Return:
+#       A value representing the slope of the line in percent.
+
+def lineSlope(line, window):
+    return ((line[-1] - line[-(window + 1)]) / window) / line[-1]

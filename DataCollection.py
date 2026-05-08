@@ -1,5 +1,6 @@
 import yfinance as yf
 import pandas as pd
+import logging
 
 # Function for collecting Date, Open, High, Low, and Close values for a provided ticker.
 # Parameters:
@@ -12,8 +13,24 @@ import pandas as pd
 #       contains closes, and the sixth list contains volumes for each interval of the period.
 
 def Fetch_Yaohoo_Data(ticker, period, interval):
-    dataRaw = yf.download(tickers=ticker, period=period, interval=interval).reset_index()
-    dates  = dataRaw["Date"].dt.strftime("%Y-%m-%d").tolist()
+    if interval == "4h":
+            dataRaw = yf.download(tickers=ticker, period=period, interval="1h", progress=False).resample("4h").agg({
+                ("Open", ticker): "first",
+                ("High", ticker): "max",
+                ("Low", ticker): "min",
+                ("Close", ticker): "last",
+                ("Volume", ticker): "sum"
+            }).dropna().reset_index()
+
+            dataRaw = dataRaw.rename(columns={
+                "Datetime": "Date"
+            })
+    else:
+        dataRaw = yf.download(tickers=ticker, period=period, interval=interval, progress=False).reset_index()
+        dataRaw = dataRaw.rename(columns={
+            "Datetime": "Date"
+        })
+    dates  = dataRaw["Date"].dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
     opens  = dataRaw[("Open", ticker)].tolist()
     highs  = dataRaw[("High", ticker)].tolist()
     lows   = dataRaw[("Low", ticker)].tolist()
