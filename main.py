@@ -6,7 +6,7 @@ tickers = [
     "AAPL", "MSFT", "NVDA", "AMZN", "GOOG", "META", "TSLA", "AVGO", "ORCL",
     "ADBE", "CRM", "NFLX", "AMD", "INTC", "QCOM", "TXN", "MU", "CSCO", "IBM",
     "NOW", "PANW", "CRWD", "DDOG", "NET", "SNOW", "PLTR", "SHOP", "UBER", "ABNB",
-    "PYPL", "COIN", "HOOD", "ROKU", "ZM", "DOCU", "MDB", "TEAM", "OKTA",
+    "PYPL", "COIN", "HOOD", "ROKU", "ZM", "DOCU", "MDB", "TEAM", "OKTA", "APP",
 
     # Semis / hardware
     "AMAT", "LRCX", "KLAC", "ADI", "MRVL", "MCHP", "ON", "NXPI", "MPWR", "SWKS",
@@ -39,7 +39,7 @@ tickers = [
 
     # Communications / media / gaming
     "DIS", "CMCSA", "T", "VZ", "CHTR", "TMUS", "WBD", "EA", "TTWO",
-    "RBLX", "SPOT", "SNAP", "PINS", "MTCH", "BMBL", "DJT", "FOX", "FOXA", "LYV",
+    "RBLX", "SPOT", "SNAP", "PINS", "MTCH", "BMBL", "DJT", "FOX", "LYV",
 
     # Real estate / REITs
     "AMT", "PLD", "EQIX", "CCI", "SPG", "O", "VICI", "DLR", "PSA", "WELL",
@@ -59,6 +59,8 @@ tickers = [
     "W", "CVNA", "GME", "AMC", "BB", "NOK", "TAL", "BABA", "JD", "PDD"
 ]
 
+reversions = []
+
 for ticker in tickers:
     HourData = Fetch_Yaohoo_Data(ticker, "max", "1h")
     FourHourData = Fetch_Yaohoo_Data(ticker, "max", "4h")
@@ -67,6 +69,6 @@ for ticker in tickers:
     bbBasisFourHour, bbUpperFourHour, bbLowerFourHour = BollingerBands(FourHourData[4], 20)
     bbPercentFourHour = BollingerBandsPercent(bbUpperFourHour[-1], bbLowerFourHour[-1], FourHourData[4][-1])
     basisDifferential, upperDifferential, lowerDifferential = BollingerBandsDifferentials(bbBasisHour[-1], bbUpperHour[-1], bbLowerHour[-1], bbBasisFourHour[-1], bbUpperFourHour[-1], bbLowerFourHour[-1])
-    
     if(abs(basisDifferential) < .005 and (bbPercentHour > .9 or bbPercentHour < .1)):
-        print(ticker, "GOOD")
+        reversions.append(ticker)
+exportTickers(reversions)
