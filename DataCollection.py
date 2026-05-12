@@ -55,6 +55,5 @@ def exportTickers(tickers, fileName=None):
         tempDate = datetime.datetime.now()
         fileName = "{}-{}-{}.txt".format(str(tempDate.year),str(tempDate.month),str(tempDate.day))
     outputFile = open(fileName, "w")
-    for ticker in tickers:
-        outputFile.writelines([element + " REVERSION DETECTED" for element in tickers])
+    outputFile.writelines([element + " REVERSION DETECTED" for element in tickers])
     outputFile.close()
