@@ -60,18 +60,13 @@ tickers = [
 ]
 
 for ticker in tickers:
-    try:
-        HourData = Fetch_Yaohoo_Data(ticker, "max", "1h")
-        FourHourData = Fetch_Yaohoo_Data(ticker, "max", "4h")
-        bbBasisHour, bbUpperHour, bbLowerHour = BollingerBands(HourData[4], 50)
-        bbPercentHour = BollingerBandsPercent(bbUpperHour[-1], bbLowerHour[-1], HourData[4][-1])
-        bbBasisFourHour, bbUpperFourHour, bbLowerFourHour = BollingerBands(FourHourData[4], 20)
-        bbPercentFourHour = BollingerBandsPercent(bbUpperFourHour[-1], bbLowerFourHour[-1], FourHourData[4][-1])
-        basisDifferential, upperDifferential, lowerDifferential = BollingerBandsDifferentials(bbBasisHour[-1], bbUpperHour[-1], bbLowerHour[-1], bbBasisFourHour[-1], bbUpperFourHour[-1], bbLowerFourHour[-1])
-        
-        if(abs(basisDifferential) < .005 and (bbPercentHour > .9 or bbPercentHour < .1)):
-            print(ticker, "GOOD")
-        else:
-            print(ticker, "BAD")
-    except:
-        print(f"================={ticker}")
+    HourData = Fetch_Yaohoo_Data(ticker, "max", "1h")
+    FourHourData = Fetch_Yaohoo_Data(ticker, "max", "4h")
+    bbBasisHour, bbUpperHour, bbLowerHour = BollingerBands(HourData[4], 50)
+    bbPercentHour = BollingerBandsPercent(bbUpperHour[-1], bbLowerHour[-1], HourData[4][-1])
+    bbBasisFourHour, bbUpperFourHour, bbLowerFourHour = BollingerBands(FourHourData[4], 20)
+    bbPercentFourHour = BollingerBandsPercent(bbUpperFourHour[-1], bbLowerFourHour[-1], FourHourData[4][-1])
+    basisDifferential, upperDifferential, lowerDifferential = BollingerBandsDifferentials(bbBasisHour[-1], bbUpperHour[-1], bbLowerHour[-1], bbBasisFourHour[-1], bbUpperFourHour[-1], bbLowerFourHour[-1])
+    
+    if(abs(basisDifferential) < .005 and (bbPercentHour > .9 or bbPercentHour < .1)):
+        print(ticker, "GOOD")
