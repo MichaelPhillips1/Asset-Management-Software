@@ -60,18 +60,13 @@ tickers = [
 ]
 
 reversions = []
-
 for ticker in tickers:
-    try:
-        HourData = Fetch_Yaohoo_Data(ticker, "max", "1h")
-        FourHourData = Fetch_Yaohoo_Data(ticker, "max", "4h")
-        bbBasisHour, bbUpperHour, bbLowerHour = BollingerBands(HourData[4], 50)
-        bbPercentHour = BollingerBandsPercent(bbUpperHour[-1], bbLowerHour[-1], HourData[4][-1])
-        bbBasisFourHour, bbUpperFourHour, bbLowerFourHour = BollingerBands(FourHourData[4], 20)
-        bbPercentFourHour = BollingerBandsPercent(bbUpperFourHour[-1], bbLowerFourHour[-1], FourHourData[4][-1])
-        basisDifferential, upperDifferential, lowerDifferential = BollingerBandsDifferentials(bbBasisHour[-1], bbUpperHour[-1], bbLowerHour[-1], bbBasisFourHour[-1], bbUpperFourHour[-1], bbLowerFourHour[-1])
-        if(abs(basisDifferential) < .005 and (bbPercentHour > .9 or bbPercentHour < .1)):
-            reversions.append(ticker)
-    except:
-        pass
-exportTickers(reversions)
+    OneHourData, FourHourData = fetchDataYahoo(ticker)
+    OneHourBasis, OneHourHigh, OneHourLow = BollingerBands(OneHourData, 50)
+    FourHourBasis, FourHourHigh, FourHourLow = BollingerBands(FourHourData)
+    OneHourBBP, FourHourBBP = BollingerBandsPercent(OneHourHigh[-1], OneHourLow[-1], OneHourData[-1][4]), BollingerBandsPercent(FourHourHigh[-1], FourHourLow[-1], FourHourData[-1][4])
+    basisDifferential, upperDifferential, lowerDifferential = BollingerBandsDifferentials(OneHourBasis[-1], OneHourHigh[-1], OneHourLow[-1],
+                                                                                          FourHourBasis[-1], FourHourHigh[-1], FourHourLow[-1])
+    OneHourBasisSlope, FourHourBasisSlope = lineSlopePercent(OneHourBasis, 5), lineSlopePercent(FourHourBasis, 5)
+    if abs(basisDifferential) < .005 and (OneHourBBP > .9 or OneHourBBP < .1) and FourHourBasisSlope < .005:
+        print(ticker) 

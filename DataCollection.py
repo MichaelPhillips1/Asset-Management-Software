@@ -1,59 +1,66 @@
 import yfinance as yf
-import datetime
 
-# Function for collecting Date, Open, High, Low, and Close values for a provided ticker.
-# Parameters:
-#       ticker = The string value of the ticker.
-#       period = The time period of data to fetch.
-#       interval = The interval to apply to the data.
-# Return:
-#       A list of lists, where the first list containsdates, the second list contains opening
-#       prices, the third list contains highs, the fouth list contains lows, the fifth list
-#       contains closes, and the sixth list contains volumes for each interval of the period.
-
-def Fetch_Yaohoo_Data(ticker, period, interval):
-    dataRaw = yf.download(tickers=ticker, period=period, interval="1h", progress=False)   
+def fetchDataYahoo(ticker):
+    dataRaw = yf.download(tickers=ticker, period="max", interval="1h", progress=False)
     dataRaw = dataRaw.tz_convert("America/New_York")
     dataRaw = dataRaw.between_time("09:30", "16:00")
-    if interval == "4h":
-        dataRaw = dataRaw.resample(
-            "4h",
-            origin="start_day",
-            offset="9h30min",
-            label="left",
-            closed="left"
-        ).agg({
-            ("Open", ticker): "first",
-            ("High", ticker): "max",
-            ("Low", ticker): "min",
-            ("Close", ticker): "last",
-            ("Volume", ticker): "sum"
-        }).dropna()
     dataRaw = dataRaw.reset_index()
-    dataRaw = dataRaw.rename(columns={
-        "Datetime": "Date"
-    })
+    dataRaw = dataRaw.rename(columns={"Datetime": "Date"})
+    data1h , data4h = [], []
 
-    dates  = dataRaw["Date"].dt.strftime("%Y-%m-%d %H:%M:%S").tolist()
-    opens  = dataRaw[("Open", ticker)].tolist()
-    highs  = dataRaw[("High", ticker)].tolist()
-    lows   = dataRaw[("Low", ticker)].tolist()
-    closes = dataRaw[("Close", ticker)].tolist()
-    vols   = dataRaw[("Volume", ticker)].tolist()
-    returnData = [dates, opens, highs, lows, closes, vols]
-    return(returnData)
+    # ---------- 1H DATA ----------
+    for i in range(len(dataRaw)):
+        date = dataRaw["Date"].iloc[i]
+        dateStr = date.strftime("%Y-%m-%d %H:%M:%S")
+        o = float(dataRaw[("Open", ticker)].iloc[i])
+        h = float(dataRaw[("High", ticker)].iloc[i])
+        l = float(dataRaw[("Low", ticker)].iloc[i])
+        c = float(dataRaw[("Close", ticker)].iloc[i])
+        v = int(dataRaw[("Volume", ticker)].iloc[i])
 
-# Function for writing output summaries for a set of flagged tickers to a labeled text file.
-# Parameters:
-#       tickers = The list of flagged tickers to output.
-#       fileName = The name of the file to output them to (defaults to current date).
-# Return:
-#       There is no return to this function, instead there is a written file.
+        data1h.append([dateStr, o, h, l, c, v])
 
-def exportTickers(tickers, fileName=None):
-    if fileName == None:
-        tempDate = datetime.datetime.now()
-        fileName = "{}-{}-{}.txt".format(str(tempDate.year),str(tempDate.month),str(tempDate.day))
-    outputFile = open(fileName, "w")
-    outputFile.writelines([element + " REVERSION DETECTED\n" for element in tickers])
-    outputFile.close()
+    # ---------- CUSTOM 4H DATA ----------
+    groupedByDay = {}
+    for i in range(len(dataRaw)):
+        date = dataRaw["Date"].iloc[i]
+        day = date.strftime("%Y-%m-%d")
+        time = date.strftime("%H:%M:%S")
+        o = float(dataRaw[("Open", ticker)].iloc[i])
+        h = float(dataRaw[("High", ticker)].iloc[i])
+        l = float(dataRaw[("Low", ticker)].iloc[i])
+        c = float(dataRaw[("Close", ticker)].iloc[i])
+        v = int(dataRaw[("Volume", ticker)].iloc[i])
+        if day not in groupedByDay:
+            groupedByDay[day] = {
+                "morning": [],
+                "afternoon": []
+            }
+        bar = [date.strftime("%Y-%m-%d %H:%M:%S"), o, h, l, c, v]
+        if time <= "12:30:00":
+            groupedByDay[day]["morning"].append(bar)
+        else:
+            groupedByDay[day]["afternoon"].append(bar)
+    for day in groupedByDay:
+        morningBars = groupedByDay[day]["morning"]
+        afternoonBars = groupedByDay[day]["afternoon"]
+        if len(morningBars) > 0:
+            data4h.append([
+                day + " 09:30:00",
+                float(morningBars[0][1]),
+                float(max(bar[2] for bar in morningBars)),
+                float(min(bar[3] for bar in morningBars)),
+                float(morningBars[-1][4]),
+                int(sum(bar[5] for bar in morningBars))
+            ])
+        if len(afternoonBars) > 0:
+            data4h.append([
+                day + " 12:30:00",
+                float(afternoonBars[0][1]),
+                float(max(bar[2] for bar in afternoonBars)),
+                float(min(bar[3] for bar in afternoonBars)),
+                float(afternoonBars[-1][4]),
+                int(sum(bar[5] for bar in afternoonBars))
+            ])
+
+    return [data1h, data4h]
