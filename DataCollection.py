@@ -1,4 +1,5 @@
 import yfinance as yf
+from datetime import datetime
 
 def fetchDataYahoo(ticker):
     dataRaw = yf.download(tickers=ticker, period="max", interval="1h", progress=False)

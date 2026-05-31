@@ -19,8 +19,17 @@ def BollingerBandsDifferentials(lowerBasis, lowerUpper, lowerLower, higherBasis,
     lowerDifferential = (lowerLower - higherLower) / lowerLower
     return [basisDifferential, upperDifferential, lowerDifferential]
 
-def BollingerBandsPercent(high, low, close):
-    return (close - low) / (high - low)
+def BollingerBandsPercent(bollingerHigh, bollingerLow, tickerData):
+    closes = [element[4] for element in tickerData]
+    bbPercent = []
+    for i in range(len(closes)):
+        if bollingerHigh[i] is None or bollingerLow[i] is None:
+            bbPercent.append(None)
+        elif bollingerHigh[i] == bollingerLow[i]:
+            bbPercent.append(None)
+        else:
+            bbPercent.append((closes[i] - bollingerLow[i]) / (bollingerHigh[i] - bollingerLow[i]))
+    return bbPercent
 
 def lineSlopePercent(line, window):
     return ((line[-1] - line[-(window + 1)]) / window) / line[-1]

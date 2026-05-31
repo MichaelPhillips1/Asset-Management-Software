@@ -59,14 +59,17 @@ tickers = [
     "W", "CVNA", "GME", "AMC", "BB", "NOK", "TAL", "BABA", "JD", "PDD"
 ]
 
-reversions = []
 for ticker in tickers:
     OneHourData, FourHourData = fetchDataYahoo(ticker)
     OneHourBasis, OneHourHigh, OneHourLow = BollingerBands(OneHourData, 50)
     FourHourBasis, FourHourHigh, FourHourLow = BollingerBands(FourHourData)
-    OneHourBBP, FourHourBBP = BollingerBandsPercent(OneHourHigh[-1], OneHourLow[-1], OneHourData[-1][4]), BollingerBandsPercent(FourHourHigh[-1], FourHourLow[-1], FourHourData[-1][4])
+    OneHourBBP, FourHourBBP = BollingerBandsPercent(OneHourHigh, OneHourLow, OneHourData), BollingerBandsPercent(FourHourHigh, FourHourLow, FourHourData)
     basisDifferential, upperDifferential, lowerDifferential = BollingerBandsDifferentials(OneHourBasis[-1], OneHourHigh[-1], OneHourLow[-1],
                                                                                           FourHourBasis[-1], FourHourHigh[-1], FourHourLow[-1])
     OneHourBasisSlope, FourHourBasisSlope = lineSlopePercent(OneHourBasis, 5), lineSlopePercent(FourHourBasis, 5)
-    if abs(basisDifferential) < .005 and (OneHourBBP > .9 or OneHourBBP < .1) and FourHourBasisSlope < .005:
-        print(ticker) 
+
+    if abs(basisDifferential) < .005 and FourHourBasisSlope < .005:
+        if OneHourBBP[-1] < .1:
+            print(ticker + " is set up for a bullish reversion.")
+        elif OneHourBBP[-1] > .9:
+            print(ticker + " is set up for a bearish reversion.")
