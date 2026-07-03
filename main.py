@@ -59,21 +59,6 @@ tickers = [
     "W", "CVNA", "GME", "AMC", "BB", "NOK", "TAL", "BABA", "JD", "PDD"
 ]
 
-def fetchTickerResults(ticker):
-    OneHourData, FourHourData = fetchDataYahoo(ticker)
-    OneHourBasis, OneHourHigh, OneHourLow = BollingerBands(OneHourData, 50)
-    FourHourBasis, FourHourHigh, FourHourLow = BollingerBands(FourHourData, 20)
-    OneHourBBP, FourHourBBP = BollingerBandsPercent(OneHourHigh, OneHourLow, OneHourData), BollingerBandsPercent(FourHourHigh, FourHourLow, FourHourData)
-    basisDifferential, upperDifferential, lowerDifferential = BollingerBandsDifferentials(OneHourBasis[-1], OneHourHigh[-1], OneHourLow[-1],
-                                                                                          FourHourBasis[-1], FourHourHigh[-1], FourHourLow[-1])
-    OneHourBasisSlope, FourHourBasisSlope = lineSlopePercent(OneHourBasis, 5), lineSlopePercent(FourHourBasis, 5)
-    if abs(basisDifferential) < .005 and abs(OneHourBasisSlope + FourHourBasisSlope) / 2 < .005:
-        if OneHourBBP[-1] < .1:
-            return 1
-        elif OneHourBBP[-1] > .9:
-            return -1
-    return 0
-
 for ticker in tickers:
     result = fetchTickerResults(ticker)
     if result == 1:
