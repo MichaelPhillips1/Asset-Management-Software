@@ -1,4 +1,3 @@
-from DataCollection import *
 from AssessmentFunctions import *
 
 tickers = [
