@@ -1,66 +1,62 @@
-from AssessmentFunctions import *
+import os, random
+from Utility.ChartImaging import generateChart
+from Utility.Pannel import Pannel
 
-tickers = [
-    # Mega-cap / big tech
-    "AAPL", "MSFT", "NVDA", "AMZN", "GOOG", "META", "TSLA", "AVGO", "ORCL",
-    "ADBE", "CRM", "NFLX", "AMD", "INTC", "QCOM", "TXN", "MU", "CSCO", "IBM",
-    "NOW", "PANW", "CRWD", "DDOG", "NET", "SNOW", "PLTR", "SHOP", "UBER", "ABNB",
-    "PYPL", "COIN", "HOOD", "ROKU", "ZM", "DOCU", "MDB", "TEAM", "OKTA", "APP",
+tickers = ["OKLO"]
 
-    # Semis / hardware
-    "AMAT", "LRCX", "KLAC", "ADI", "MRVL", "MCHP", "ON", "NXPI", "MPWR", "SWKS",
-    "TER", "ENTG", "WDC", "STX", "DELL", "HPQ", "NTAP", "SMCI", "ARM", "TSM",
+ROOT = os.path.dirname(os.path.abspath(__file__))
+EXAMPLES = os.path.join(ROOT, "Examples")
 
-    # Financials
-    "JPM", "BAC", "WFC", "C", "GS", "MS", "AXP", "V", "MA", "BLK",
-    "SCHW", "COF", "USB", "PNC", "TFC", "BK", "STT", "AIG", "MET",
-    "PRU", "ALL", "TRV", "CB", "CME", "ICE", "SPGI", "MCO", "NDAQ", "BR",
+pannel = Pannel(count=10, workers=10)
 
-    # Healthcare / biotech
-    "UNH", "LLY", "JNJ", "MRK", "ABBV", "PFE", "BMY", "AMGN", "GILD", "REGN",
-    "VRTX", "BIIB", "MRNA", "ISRG", "TMO", "DHR", "ABT", "MDT", "SYK", "BSX",
-    "ZBH", "HUM", "CI", "CVS", "ELV", "HCA", "IDXX", "ILMN", "DXCM", "EW",
+def sampleExamples(direction, count=4):
+    prefix = "BullReversionSetup" if direction == "bull" else "BearReversionSetup"
 
-    # Consumer / retail / restaurants
-    "WMT", "COST", "TGT", "HD", "LOW", "NKE", "LULU", "SBUX", "MCD", "CMG",
-    "YUM", "DPZ", "DRI", "CROX", "TJX", "ROST", "ULTA", "EL", "PG", "KO",
-    "PEP", "KHC", "MDLZ", "GIS", "CL", "CLX", "KMB", "MNST", "CELH",
+    files = [
+        os.path.join(EXAMPLES, f)
+        for f in os.listdir(EXAMPLES)
+        if f.startswith(prefix) and f.lower().endswith(".png")
+    ]
 
-    # Energy
-    "XOM", "CVX", "COP", "SLB", "OXY", "EOG", "MPC", "VLO", "PSX", "HAL",
-    "BKR", "DVN", "FANG", "APA", "KMI", "WMB", "OKE", "LNG", "ENPH",
-    "SEDG", "FSLR", "RUN", "NEE", "DUK", "SO", "AEP", "EXC", "D",
+    if len(files) < count:
+        raise ValueError(f"Only found {len(files)} {direction} examples")
 
-    # Industrials / defense / transport
-    "CAT", "DE", "BA", "GE", "HON", "MMM", "RTX", "LMT", "NOC", "GD",
-    "UPS", "FDX", "UNP", "CSX", "NSC", "DAL", "UAL", "AAL", "LUV", "JBLU",
-    "RCL", "CCL", "NCLH", "MAR", "HLT", "ABNB", "BKNG", "EXPE", "URI", "ETN",
+    return random.sample(files, count)
 
-    # Communications / media / gaming
-    "DIS", "CMCSA", "T", "VZ", "CHTR", "TMUS", "WBD", "EA", "TTWO",
-    "RBLX", "SPOT", "SNAP", "PINS", "MTCH", "BMBL", "DJT", "FOX", "LYV",
-
-    # Real estate / REITs
-    "AMT", "PLD", "EQIX", "CCI", "SPG", "O", "VICI", "DLR", "PSA", "WELL",
-    "AVB", "EQR", "MAA", "EXR", "CBRE", "WY", "IRM", "ARE", "BXP", "KIM",
-
-    # Materials
-    "LIN", "APD", "SHW", "ECL", "NEM", "FCX", "DD", "DOW", "NUE", "STLD",
-    "AA", "CLF", "MOS", "CF", "ALB", "SQM", "RIO", "BHP", "VALE",
-
-    # Autos / EV / mobility
-    "F", "GM", "RIVN", "LCID", "NIO", "LI", "XPEV", "TM", "HMC", "STLA",
-    "CAR", "HTZ", "AZO", "ORLY", "AAP", "GPC", "LKQ", "MGA", "BWA", "QS",
-
-    # Popular mid/small/growth names
-    "SOFI", "AFRM", "UPST", "OPEN", "DKNG", "PENN", "MARA", "RIOT", "HUT", "CLSK",
-    "IONQ", "RGTI", "QBTS", "SOUN", "AI", "PATH", "U", "FUBO", "CHWY", "ETSY",
-    "W", "CVNA", "GME", "AMC", "BB", "NOK", "TAL", "BABA", "JD", "PDD"
-]
 
 for ticker in tickers:
-    result = fetchTickerResults(ticker)
-    if result == 1:
-        print(ticker + " is set up for a bullish reversion.")
-    elif result == -1:
-            print(ticker + " is set up for a bearish reversion.")
+    try:
+        chartPath, metrics = generateChart(ticker)
+
+        bb = metrics["currentOneHourBollingerBandPercent"]
+
+        if bb < .15:
+            direction = "bull"
+        elif bb > .85:
+            direction = "bear"
+        else:
+            print(f"{ticker} | skipped | BB%={bb:.3f}")
+            continue
+
+        examples = sampleExamples(direction, 4)
+
+        result = pannel.rank(
+            ticker,
+            chartPath,
+            metrics,
+            examples
+        )
+
+        print(
+            f"\n{ticker} | "
+            f"{direction.upper()} | "
+            f"BB%={bb:.3f} | "
+            f"confidence={result['score']:.1f}"
+        )
+
+        print("Examples:", [os.path.basename(x) for x in examples])
+        print("Exact:", result["metrics"])
+        print("Visual:", result["details"])
+
+    except Exception as e:
+        print(f"{ticker} ERROR: {e}")
