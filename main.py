@@ -2,12 +2,12 @@ import os, random
 from Utility.ChartImaging import generateChart
 from Utility.Pannel import Pannel
 
-tickers = ["OKLO"]
+tickers = ["QUBT"]
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 EXAMPLES = os.path.join(ROOT, "Examples")
 
-pannel = Pannel(count=10, workers=10)
+pannel = Pannel(count=5, workers=5)
 
 def sampleExamples(direction, count=4):
     prefix = "BullReversionSetup" if direction == "bull" else "BearReversionSetup"
