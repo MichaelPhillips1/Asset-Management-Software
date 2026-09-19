@@ -2,7 +2,7 @@ import os, random
 from Utility.ChartImaging import generateChart
 from Utility.Pannel import Pannel
 
-tickers = ["QUBT"]
+tickers = ["TEM"]
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 EXAMPLES = os.path.join(ROOT, "Examples")
