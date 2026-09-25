@@ -1,0 +1,2410 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>
+        Mean Reversion Run Viewer
+    </title>
+
+
+    <style>
+        :root {
+            --bg: #0b0d10;
+            --panel: #11151a;
+            --panel2: #151a20;
+            --border: #252c35;
+            --text: #eef2f6;
+            --muted: #8d98a5;
+            --accent: #56a8ff;
+            --good: #35d07f;
+            --bad: #ff6363;
+            --warn: #f6c75b;
+        }
+
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+
+            background: var(--bg);
+            color: var(--text);
+
+            font-family:
+                Inter,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            overflow: hidden;
+        }
+
+
+        button,
+        input {
+            font: inherit;
+        }
+
+
+        .app {
+            height: 100vh;
+
+            display: grid;
+
+            grid-template-columns:
+                340px 1fr;
+        }
+
+
+        /* ============================================================
+       SIDEBAR
+       ============================================================ */
+
+        .sidebar {
+            background: #0e1115;
+
+            border-right:
+                1px solid var(--border);
+
+            display: flex;
+
+            flex-direction: column;
+
+            min-width: 0;
+        }
+
+
+        .brand {
+            padding: 20px;
+
+            border-bottom:
+                1px solid var(--border);
+        }
+
+
+        .brand h1 {
+            margin: 0;
+
+            font-size: 18px;
+        }
+
+
+        .brand p {
+            margin: 6px 0 0;
+
+            color: var(--muted);
+
+            font-size: 12px;
+        }
+
+
+        /* ============================================================
+       RUN FORM
+       ============================================================ */
+
+        .run-form {
+            padding: 16px;
+
+            border-bottom:
+                1px solid var(--border);
+        }
+
+
+        .form-group {
+            margin-bottom: 13px;
+        }
+
+
+        .form-label {
+            display: block;
+
+            margin-bottom: 6px;
+
+            color: #cbd3dc;
+
+            font-size: 12px;
+
+            font-weight: 700;
+        }
+
+
+        .form-input {
+            width: 100%;
+
+            padding: 10px 12px;
+
+            background: var(--panel);
+
+            color: var(--text);
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 8px;
+
+            outline: none;
+        }
+
+
+        .form-input:focus {
+            border-color: var(--accent);
+        }
+
+
+        #ticker {
+            text-transform: uppercase;
+        }
+
+
+        .field-help {
+            margin-top: 5px;
+
+            color: var(--muted);
+
+            font-size: 10px;
+        }
+
+
+        .primary {
+            width: 100%;
+
+            padding: 11px 14px;
+
+            background: var(--accent);
+
+            color: #07111c;
+
+            border: 0;
+
+            border-radius: 8px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+        }
+
+
+        .primary:disabled {
+            opacity: 0.55;
+
+            cursor: wait;
+        }
+
+
+        /* ============================================================
+       RUN LIST
+       ============================================================ */
+
+        .run-list {
+            flex: 1;
+
+            overflow-y: auto;
+
+            padding: 8px;
+        }
+
+
+        .run-item {
+            width: 100%;
+
+            margin-bottom: 5px;
+
+            padding: 11px;
+
+            background: transparent;
+
+            color: var(--text);
+
+            border:
+                1px solid transparent;
+
+            border-radius: 10px;
+
+            text-align: left;
+
+            cursor: pointer;
+        }
+
+
+        .run-item:hover {
+            background: var(--panel);
+        }
+
+
+        .run-item.active {
+            background: var(--panel2);
+
+            border-color: #34404d;
+        }
+
+
+        .run-top,
+        .run-bottom {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            gap: 10px;
+        }
+
+
+        .run-ticker {
+            font-weight: 800;
+
+            font-size: 14px;
+        }
+
+
+        .run-time,
+        .run-bottom {
+            color: var(--muted);
+
+            font-size: 11px;
+        }
+
+
+        .run-bottom {
+            margin-top: 7px;
+        }
+
+
+        .badge {
+            display: inline-flex;
+
+            padding: 2px 8px;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 999px;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+            text-transform: uppercase;
+        }
+
+
+        .badge.bull {
+            color: var(--good);
+        }
+
+
+        .badge.bear,
+        .badge.error {
+            color: var(--bad);
+        }
+
+
+        .badge.neutral,
+        .badge.skipped {
+            color: var(--warn);
+        }
+
+
+        /* ============================================================
+       MAIN
+       ============================================================ */
+
+        .main {
+            min-width: 0;
+
+            padding: 22px;
+
+            overflow-y: auto;
+        }
+
+
+        .topbar {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: flex-start;
+
+            gap: 18px;
+
+            margin-bottom: 18px;
+        }
+
+
+        .title-wrap h2 {
+            margin: 0;
+
+            font-size: 24px;
+        }
+
+
+        .title-wrap p {
+            margin: 5px 0 0;
+
+            color: var(--muted);
+
+            font-size: 13px;
+        }
+
+
+        .delete-btn {
+            display: none;
+
+            padding: 8px 11px;
+
+            background: #1b1212;
+
+            color: #ff8b8b;
+
+            border:
+                1px solid #523333;
+
+            border-radius: 8px;
+
+            cursor: pointer;
+        }
+
+
+        /* ============================================================
+       PANELS
+       ============================================================ */
+
+        .panel {
+            background: var(--panel);
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 12px;
+
+            padding: 16px;
+
+            margin-bottom: 14px;
+        }
+
+
+        .panel-title {
+            margin: 0 0 12px;
+
+            color: #c8d0d8;
+
+            font-size: 13px;
+
+            font-weight: 800;
+
+            text-transform: uppercase;
+        }
+
+
+        /* ============================================================
+       RUN DETAILS
+       ============================================================ */
+
+        .detail-grid {
+            display: grid;
+
+            grid-template-columns:
+                repeat(2,
+                    minmax(0, 1fr));
+
+            gap: 10px;
+        }
+
+
+        .kv {
+            padding: 11px 12px;
+
+            background: #0e1216;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 9px;
+        }
+
+
+        .kv .k {
+            color: var(--muted);
+
+            font-size: 11px;
+        }
+
+
+        .kv .v {
+            margin-top: 4px;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            word-break: break-word;
+        }
+
+
+        /* ============================================================
+       CHART
+       ============================================================ */
+
+        .chart-wrap {
+            min-height: 280px;
+
+            display: grid;
+
+            place-items: center;
+
+            background: #090b0e;
+
+            border:
+                1px solid #20262d;
+
+            border-radius: 10px;
+
+            overflow: hidden;
+        }
+
+
+        .chart-wrap img {
+            display: block;
+
+            width: 100%;
+
+            height: auto;
+        }
+
+
+        /* ============================================================
+       PANEL AGENTS
+       ============================================================ */
+
+        .agent-card {
+            padding: 12px;
+
+            margin-bottom: 10px;
+
+            background: #0e1216;
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 9px;
+        }
+
+
+        .agent-header {
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            margin-bottom: 10px;
+        }
+
+
+        .agent-title {
+            font-weight: 800;
+        }
+
+
+        .agent-score {
+            color: var(--accent);
+
+            font-weight: 800;
+        }
+
+
+        .agent-json {
+            margin: 0;
+
+            color: #c8d0d8;
+
+            font-family:
+                Consolas,
+                monospace;
+
+            font-size: 11px;
+
+            white-space: pre-wrap;
+
+            word-break: break-word;
+        }
+
+
+        details {
+            margin-top: 10px;
+        }
+
+
+        summary {
+            color: var(--muted);
+
+            cursor: pointer;
+
+            font-size: 11px;
+        }
+
+
+        .empty {
+            padding: 40px 20px;
+
+            color: var(--muted);
+
+            text-align: center;
+        }
+
+
+        .error-box {
+            padding: 12px;
+
+            background: #1a1010;
+
+            color: #ff9a9a;
+
+            border:
+                1px solid #502c2c;
+
+            border-radius: 9px;
+
+            white-space: pre-wrap;
+        }
+
+
+        /* ============================================================
+       LOADING
+       ============================================================ */
+
+        .loading-overlay {
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 50;
+
+            display: none;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background:
+                rgba(4,
+                    6,
+                    8,
+                    0.72);
+
+            backdrop-filter:
+                blur(3px);
+        }
+
+
+        .loading-box {
+            width:
+                min(420px,
+                    calc(100vw - 40px));
+
+            padding: 22px;
+
+            background: var(--panel);
+
+            border:
+                1px solid var(--border);
+
+            border-radius: 14px;
+
+            text-align: center;
+        }
+
+
+        .spinner {
+            width: 32px;
+
+            height: 32px;
+
+            margin: 0 auto 12px;
+
+            border:
+                3px solid #26303a;
+
+            border-top-color:
+                var(--accent);
+
+            border-radius: 50%;
+
+            animation:
+                spin 0.85s linear infinite;
+        }
+
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+
+        @media (max-width: 1000px) {
+
+            .app {
+                grid-template-columns:
+                    290px 1fr;
+            }
+
+
+            .detail-grid {
+                grid-template-columns:
+                    repeat(2,
+                        minmax(0, 1fr));
+            }
+        }
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <div class="app">
+
+
+        <!-- ========================================================
+         SIDEBAR
+         ======================================================== -->
+
+        <aside class="sidebar">
+
+
+            <div class="brand">
+
+                <h1>
+                    Mean Reversion Viewer
+                </h1>
+
+                <p>
+                    Run history + panel analysis
+                </p>
+
+            </div>
+
+
+            <div class="run-form">
+
+
+                <!-- TICKER -->
+
+                <div class="form-group">
+
+                    <label class="form-label" for="ticker">
+                        Ticker:
+                    </label>
+
+                    <input id="ticker" class="form-input" value="TEM" autocomplete="off">
+
+                </div>
+
+
+                <!-- LOOKBACK -->
+
+                <div class="form-group">
+
+                    <label class="form-label" for="barLookback">
+                        Lookback in bars:
+                    </label>
+
+                    <input id="barLookback" class="form-input" type="number" value="500" min="250" step="1">
+
+                    <div class="field-help">
+                        Minimum 250 1-hour bars
+                    </div>
+
+                </div>
+
+
+                <!-- AGENTS -->
+
+                <div class="form-group">
+
+                    <label class="form-label" for="agentCount">
+                        Number of agents:
+                    </label>
+
+                    <input id="agentCount" class="form-input" type="number" value="5" min="1" step="1"
+                        oninput="updateWorkerLimit()">
+
+                    <div class="field-help">
+                        Total independent model evaluations
+                    </div>
+
+                </div>
+
+
+                <!-- WORKERS -->
+
+                <div class="form-group">
+
+                    <label class="form-label" for="workerCount">
+                        Number of workers:
+                    </label>
+
+                    <input id="workerCount" class="form-input" type="number" value="5" min="1" max="5" step="1">
+
+                    <div class="field-help">
+                        Maximum model calls running simultaneously
+                    </div>
+
+                </div>
+
+
+                <button id="runButton" class="primary" onclick="runAnalysis()">
+                    Run Analysis
+                </button>
+
+            </div>
+
+
+            <div id="runList" class="run-list"></div>
+
+
+        </aside>
+
+
+        <!-- ========================================================
+         MAIN
+         ======================================================== -->
+
+        <main class="main">
+
+
+            <div class="topbar">
+
+
+                <div class="title-wrap">
+
+                    <h2 id="pageTitle">
+                        Run Dashboard
+                    </h2>
+
+
+                    <p id="pageSubtitle">
+                        Select a prior run or start a new analysis.
+                    </p>
+
+                </div>
+
+
+                <button id="deleteButton" class="delete-btn" onclick="deleteSelectedRun()">
+                    Delete run
+                </button>
+
+
+            </div>
+
+
+            <!-- NO TOP METRICS HERE -->
+
+
+            <div id="content"></div>
+
+
+        </main>
+
+
+    </div>
+
+
+    <!-- ==========================================================
+     LOADING
+     ========================================================== -->
+
+    <div id="loading" class="loading-overlay">
+
+
+        <div class="loading-box">
+
+
+            <div class="spinner"></div>
+
+
+            <div style="
+                font-weight: 800;
+                font-size: 16px;
+            ">
+                Running analysis
+            </div>
+
+
+            <div id="loadingTicker" style="
+                color: var(--muted);
+                margin-top: 6px;
+                font-size: 12px;
+            "></div>
+
+
+        </div>
+
+
+    </div>
+
+
+    <script>
+
+
+        let runs = [];
+
+        let selectedRunId = null;
+
+
+        /* ============================================================
+           HELPERS
+           ============================================================ */
+
+
+        function escapeHtml(value) {
+
+            return String(
+                value ?? ""
+            )
+
+                .replaceAll(
+                    "&",
+                    "&amp;"
+                )
+
+                .replaceAll(
+                    "<",
+                    "&lt;"
+                )
+
+                .replaceAll(
+                    ">",
+                    "&gt;"
+                )
+
+                .replaceAll(
+                    '"',
+                    "&quot;"
+                )
+
+                .replaceAll(
+                    "'",
+                    "&#039;"
+                );
+        }
+
+
+        function fmt(
+            value,
+            digits = 2
+        ) {
+
+            if (
+                value === null ||
+                value === undefined ||
+                Number.isNaN(
+                    Number(value)
+                )
+            ) {
+
+                return "—";
+            }
+
+
+            return Number(
+                value
+            ).toFixed(
+                digits
+            );
+        }
+
+
+        function prettyKey(key) {
+
+            return String(
+                key
+            )
+
+                .replace(
+                    /([A-Z])/g,
+                    " $1"
+                )
+
+                .replace(
+                    /^./,
+                    char =>
+                        char.toUpperCase()
+                );
+        }
+
+
+        /* ============================================================
+           AGENTS / WORKERS
+           ============================================================ */
+
+
+        function updateWorkerLimit() {
+
+            const agentsInput =
+                document.getElementById(
+                    "agentCount"
+                );
+
+
+            const workersInput =
+                document.getElementById(
+                    "workerCount"
+                );
+
+
+            let agents =
+                parseInt(
+                    agentsInput.value,
+                    10
+                );
+
+
+            let workers =
+                parseInt(
+                    workersInput.value,
+                    10
+                );
+
+
+            if (
+                Number.isNaN(agents) ||
+                agents < 1
+            ) {
+
+                agents = 1;
+            }
+
+
+            workersInput.max =
+                agents;
+
+
+            if (
+                !Number.isNaN(workers) &&
+                workers > agents
+            ) {
+
+                workersInput.value =
+                    agents;
+            }
+        }
+
+
+        /* ============================================================
+           DIRECTION BADGE
+           ============================================================ */
+
+
+        function directionBadge(run) {
+
+            let className =
+                run.direction ||
+                run.status ||
+                "neutral";
+
+
+            let text =
+                run.direction ||
+                run.status ||
+                "unknown";
+
+
+            if (
+                run.status === "error"
+            ) {
+
+                className =
+                    "error";
+
+                text =
+                    "error";
+            }
+
+
+            if (
+                run.status === "skipped"
+            ) {
+
+                className =
+                    "skipped";
+
+                text =
+                    "skipped";
+            }
+
+
+            return `
+
+        <span
+            class="
+                badge
+                ${escapeHtml(className)}
+            "
+        >
+            ${escapeHtml(text)}
+        </span>
+
+    `;
+        }
+
+
+        /* ============================================================
+           RUN LIST
+           ============================================================ */
+
+
+        function renderRunList() {
+
+            const root =
+                document.getElementById(
+                    "runList"
+                );
+
+
+            if (
+                !runs.length
+            ) {
+
+                root.innerHTML = `
+
+            <div class="empty">
+                No runs yet.
+            </div>
+
+        `;
+
+                return;
+            }
+
+
+            root.innerHTML =
+                runs.map(
+                    run => {
+
+
+                        const active =
+
+                            Number(run.id) ===
+                                Number(selectedRunId)
+
+                                ? "active"
+
+                                : "";
+
+
+                        const when =
+
+                            run.timestamp
+
+                                ? new Date(
+                                    run.timestamp
+                                ).toLocaleString()
+
+                                : "";
+
+
+                        const score =
+
+                            run.score == null
+
+                                ? "—"
+
+                                : fmt(
+                                    run.score,
+                                    1
+                                );
+
+
+                        const bars =
+
+                            run.barCount ??
+                            "—";
+
+
+                        return `
+
+
+                    <button
+
+                        class="
+                            run-item
+                            ${active}
+                        "
+
+                        onclick="
+                            selectRun(
+                                ${Number(run.id)}
+                            )
+                        "
+                    >
+
+
+                        <div class="run-top">
+
+
+                            <span class="run-ticker">
+
+                                ${escapeHtml(
+                            run.ticker
+                        )}
+
+                            </span>
+
+
+                            ${directionBadge(run)}
+
+
+                        </div>
+
+
+                        <div class="run-time">
+
+                            ${escapeHtml(
+                            when
+                        )}
+
+                        </div>
+
+
+                        <div class="run-bottom">
+
+
+                            <span>
+
+                                Score ${score}
+
+                            </span>
+
+
+                            <span>
+
+                                ${bars} bars
+
+                            </span>
+
+
+                        </div>
+
+
+                    </button>
+
+
+                `;
+
+                    }
+
+                ).join("");
+        }
+
+
+        /* ============================================================
+           KEY VALUES
+           ============================================================ */
+
+
+        function renderKeyValues(obj) {
+
+            const entries =
+                Object.entries(
+                    obj || {}
+                );
+
+
+            if (
+                !entries.length
+            ) {
+
+                return `
+
+            <div class="empty">
+                No values available.
+            </div>
+
+        `;
+            }
+
+
+            return `
+
+
+        <div class="detail-grid">
+
+
+            ${entries.map(
+
+                ([key, value]) => `
+
+
+                    <div class="kv">
+
+
+                        <div class="k">
+
+                            ${escapeHtml(
+                    prettyKey(key)
+                )}
+
+                        </div>
+
+
+                        <div class="v">
+
+
+                            ${typeof value === "number"
+
+                        ? fmt(
+                            value,
+                            4
+                        )
+
+                        : escapeHtml(
+                            value
+                        )
+                    }
+
+
+                        </div>
+
+
+                    </div>
+
+
+                `
+
+            ).join("")}
+
+
+        </div>
+
+
+    `;
+        }
+
+
+        /* ============================================================
+           PANEL AGENTS
+           ============================================================ */
+
+
+        function renderPanelOutputs(outputs) {
+
+            if (
+                !outputs ||
+                !outputs.length
+            ) {
+
+                return `
+
+            <div class="empty">
+
+                No panel agents ran for this run.
+
+            </div>
+
+        `;
+            }
+
+
+            return outputs.map(
+
+                agent => {
+
+
+                    let responsePretty =
+                        agent.response;
+
+
+                    try {
+
+                        responsePretty =
+                            JSON.stringify(
+
+                                JSON.parse(
+                                    agent.response
+                                ),
+
+                                null,
+
+                                2
+                            );
+
+                    }
+
+                    catch (_) {
+                    }
+
+
+                    let promptPretty =
+                        agent.prompt;
+
+
+                    try {
+
+                        promptPretty =
+                            JSON.stringify(
+
+                                JSON.parse(
+                                    agent.prompt
+                                ),
+
+                                null,
+
+                                2
+                            );
+
+                    }
+
+                    catch (_) {
+                    }
+
+
+                    return `
+
+
+                <div class="agent-card">
+
+
+                    <div class="agent-header">
+
+
+                        <div class="agent-title">
+
+                            Agent ${escapeHtml(
+                        agent.agentNumber
+                    )}
+
+                        </div>
+
+
+                        <div class="agent-score">
+
+                            Score ${agent.score == null
+
+                            ? "—"
+
+                            : fmt(
+                                agent.score,
+                                2
+                            )
+                        }
+
+                        </div>
+
+
+                    </div>
+
+
+                    <pre class="agent-json">${escapeHtml(responsePretty)}</pre>
+
+
+                    <details>
+
+
+                        <summary>
+
+                            Prompt sent to this agent
+
+                        </summary>
+
+
+                        <pre class="agent-json">${escapeHtml(promptPretty)}</pre>
+
+
+                    </details>
+
+
+                </div>
+
+
+            `;
+
+                }
+
+            ).join("");
+        }
+
+
+        /* ============================================================
+           RENDER RUN
+           ============================================================ */
+
+
+        function renderRun(run) {
+
+            selectedRunId =
+                run.id;
+
+
+            renderRunList();
+
+
+            const when =
+
+                run.timestamp
+
+                    ? new Date(
+                        run.timestamp
+                    ).toLocaleString()
+
+                    : "";
+
+
+            document.getElementById(
+                "pageTitle"
+            ).textContent =
+
+                `${run.ticker} Run #${run.id}`;
+
+
+            document.getElementById(
+                "pageSubtitle"
+            ).textContent =
+
+                `${when} · ${run.status}`;
+
+
+            document.getElementById(
+                "deleteButton"
+            ).style.display =
+
+                "inline-block";
+
+
+            const chart =
+
+                run.chartDataUri
+
+                    ? `
+
+                <img
+                    src="${run.chartDataUri}"
+                    alt="${escapeHtml(run.ticker)} chart"
+                >
+
+              `
+
+                    : `
+
+                <div class="empty">
+                    No chart stored for this run.
+                </div>
+
+              `;
+
+
+            const errorSection =
+
+                run.error
+
+                    ? `
+
+                <div class="panel">
+
+
+                    <div class="panel-title">
+                        Error
+                    </div>
+
+
+                    <div class="error-box">
+
+                        ${escapeHtml(
+                        run.error
+                    )}
+
+                    </div>
+
+
+                </div>
+
+              `
+
+                    : "";
+
+
+            document.getElementById(
+                "content"
+            ).innerHTML = `
+
+
+        <!-- ==================================================
+             RUN INFO
+             ================================================== -->
+
+
+        <div class="panel">
+
+
+            <div class="panel-title">
+
+                Run information
+
+            </div>
+
+
+            <div class="detail-grid">
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Run ID
+                    </div>
+
+                    <div class="v">
+                        ${escapeHtml(run.id)}
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Run name
+                    </div>
+
+                    <div class="v">
+                        ${escapeHtml(
+                run.runName ??
+                "—"
+            )}
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Ticker
+                    </div>
+
+                    <div class="v">
+                        ${escapeHtml(
+                run.ticker
+            )}
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Lookback
+                    </div>
+
+                    <div class="v">
+
+                        ${escapeHtml(
+                run.barCount ??
+                "—"
+            )}
+
+                        1H bars
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Start datetime
+                    </div>
+
+                    <div class="v">
+
+                        ${escapeHtml(
+                run.startDateTime ??
+                "—"
+            )}
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        End datetime
+                    </div>
+
+                    <div class="v">
+
+                        ${escapeHtml(
+                run.endDateTime ??
+                "—"
+            )}
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Agents
+                    </div>
+
+                    <div class="v">
+
+                        ${escapeHtml(
+                run.agentCount ??
+                "—"
+            )}
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Workers
+                    </div>
+
+                    <div class="v">
+
+                        ${escapeHtml(
+                run.workerCount ??
+                "—"
+            )}
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Status
+                    </div>
+
+                    <div class="v">
+
+                        ${escapeHtml(
+                run.status ??
+                "—"
+            )}
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Direction
+                    </div>
+
+                    <div class="v">
+
+                        ${escapeHtml(
+                run.direction ??
+                "—"
+            )}
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Confidence
+                    </div>
+
+                    <div class="v">
+
+                        ${run.score == null
+
+                    ? "—"
+
+                    : fmt(
+                        run.score,
+                        2
+                    )
+                }
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Score standard deviation
+                    </div>
+
+                    <div class="v">
+
+                        ${run.std == null
+
+                    ? "—"
+
+                    : fmt(
+                        run.std,
+                        2
+                    )
+                }
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        1H BB%
+                    </div>
+
+                    <div class="v">
+
+                        ${run.bbPercent == null
+
+                    ? "—"
+
+                    : fmt(
+                        run.bbPercent,
+                        4
+                    )
+                }
+
+                    </div>
+
+                </div>
+
+
+                <div class="kv">
+
+                    <div class="k">
+                        Runtime
+                    </div>
+
+                    <div class="v">
+
+                        ${run.durationSeconds == null
+
+                    ? "—"
+
+                    : `${fmt(
+                        run.durationSeconds,
+                        2
+                    )} sec`
+                }
+
+                    </div>
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+        ${errorSection}
+
+
+        <!-- ==================================================
+             CHART
+             ================================================== -->
+
+
+        <div class="panel">
+
+
+            <div class="panel-title">
+
+                Chart provided to panel
+
+            </div>
+
+
+            <div class="chart-wrap">
+
+                ${chart}
+
+            </div>
+
+
+        </div>
+
+
+        <!-- ==================================================
+             EXACT METRICS
+             ================================================== -->
+
+
+        <div class="panel">
+
+
+            <div class="panel-title">
+
+                Exact metrics
+
+            </div>
+
+
+            ${renderKeyValues(
+                    run.metrics
+                )}
+
+
+        </div>
+
+
+        <!-- ==================================================
+             PANEL OUTPUTS
+             ================================================== -->
+
+
+        <div class="panel">
+
+
+            <div class="panel-title">
+
+                Panel agent outputs
+
+            </div>
+
+
+            ${renderPanelOutputs(
+                    run.panelOutputs
+                )}
+
+
+        </div>
+
+
+    `;
+        }
+
+
+        /* ============================================================
+           SELECT RUN
+           ============================================================ */
+
+
+        async function selectRun(id) {
+
+            const response =
+
+                await window.pywebview.api.get_run(
+                    id
+                );
+
+
+            if (
+                !response.ok
+            ) {
+
+                alert(
+                    response.error ||
+                    "Could not load run."
+                );
+
+                return;
+            }
+
+
+            renderRun(
+                response.run
+            );
+        }
+
+
+        /* ============================================================
+           RUN ANALYSIS
+           ============================================================ */
+
+
+        async function runAnalysis() {
+
+            const ticker =
+
+                document
+                    .getElementById("ticker")
+                    .value
+                    .trim()
+                    .toUpperCase();
+
+
+            const bars =
+
+                parseInt(
+
+                    document
+                        .getElementById(
+                            "barLookback"
+                        )
+                        .value,
+
+                    10
+                );
+
+
+            const agents =
+
+                parseInt(
+
+                    document
+                        .getElementById(
+                            "agentCount"
+                        )
+                        .value,
+
+                    10
+                );
+
+
+            const workers =
+
+                parseInt(
+
+                    document
+                        .getElementById(
+                            "workerCount"
+                        )
+                        .value,
+
+                    10
+                );
+
+
+            /* --------------------------------------------------------
+               VALIDATION
+               -------------------------------------------------------- */
+
+
+            if (
+                !ticker
+            ) {
+
+                alert(
+                    "Enter a ticker."
+                );
+
+                return;
+            }
+
+
+            if (
+                Number.isNaN(bars) ||
+                bars < 250
+            ) {
+
+                alert(
+                    "Lookback must be at least 250 1-hour bars."
+                );
+
+                return;
+            }
+
+
+            if (
+                Number.isNaN(agents) ||
+                agents < 1
+            ) {
+
+                alert(
+                    "Number of agents must be at least 1."
+                );
+
+                return;
+            }
+
+
+            if (
+                Number.isNaN(workers) ||
+                workers < 1
+            ) {
+
+                alert(
+                    "Number of workers must be at least 1."
+                );
+
+                return;
+            }
+
+
+            if (
+                workers > agents
+            ) {
+
+                alert(
+                    "Number of workers cannot be greater than number of agents."
+                );
+
+                return;
+            }
+
+
+            /* --------------------------------------------------------
+               LOADING
+               -------------------------------------------------------- */
+
+
+            const runButton =
+
+                document.getElementById(
+                    "runButton"
+                );
+
+
+            runButton.disabled =
+                true;
+
+
+            document.getElementById(
+                "loadingTicker"
+            ).textContent =
+
+                `${ticker} · ${bars} bars · ${agents} agents · ${workers} workers`;
+
+
+            document.getElementById(
+                "loading"
+            ).style.display =
+
+                "flex";
+
+
+            /* --------------------------------------------------------
+               PYTHON
+               -------------------------------------------------------- */
+
+
+            try {
+
+
+                const response =
+
+                    await window.pywebview.api.run_analysis(
+                        ticker,
+                        bars,
+                        agents,
+                        workers
+                    );
+
+
+                runs =
+                    response.runs ||
+                    runs;
+
+
+                renderRunList();
+
+
+                if (
+                    response.run
+                ) {
+
+                    renderRun(
+                        response.run
+                    );
+                }
+
+
+                if (
+                    !response.ok &&
+                    response.error
+                ) {
+
+                    alert(
+                        response.error
+                    );
+                }
+
+            }
+
+
+            catch (error) {
+
+                alert(
+                    `Analysis failed: ${error}`
+                );
+            }
+
+
+            finally {
+
+                document.getElementById(
+                    "loading"
+                ).style.display =
+
+                    "none";
+
+
+                runButton.disabled =
+                    false;
+            }
+        }
+
+
+        /* ============================================================
+           DELETE RUN
+           ============================================================ */
+
+
+        async function deleteSelectedRun() {
+
+            if (
+                !selectedRunId
+            ) {
+
+                return;
+            }
+
+
+            if (
+
+                !confirm(
+                    "Delete this saved run?"
+                )
+
+            ) {
+
+                return;
+            }
+
+
+            const response =
+
+                await window.pywebview.api.delete_run(
+                    selectedRunId
+                );
+
+
+            if (
+                !response.ok
+            ) {
+
+                alert(
+                    response.error ||
+                    "Delete failed."
+                );
+
+                return;
+            }
+
+
+            selectedRunId =
+                null;
+
+
+            runs =
+                response.runs ||
+                [];
+
+
+            renderRunList();
+
+
+            document.getElementById(
+                "pageTitle"
+            ).textContent =
+
+                "Run Dashboard";
+
+
+            document.getElementById(
+                "pageSubtitle"
+            ).textContent =
+
+                "Select a prior run or start a new analysis.";
+
+
+            document.getElementById(
+                "deleteButton"
+            ).style.display =
+
+                "none";
+
+
+            document.getElementById(
+                "content"
+            ).innerHTML = `
+
+
+        <div class="panel">
+
+
+            <div class="empty">
+
+                Select a run from the left.
+
+            </div>
+
+
+        </div>
+
+
+    `;
+        }
+
+
+        /* ============================================================
+           INIT
+           ============================================================ */
+
+
+        async function init() {
+
+            const state =
+
+                await window.pywebview.api.get_initial_state();
+
+
+            runs =
+                state.runs ||
+                [];
+
+
+            document.getElementById(
+                "ticker"
+            ).value =
+
+                state.defaultTickers?.[0] ||
+                "TEM";
+
+
+            document.getElementById(
+                "barLookback"
+            ).value =
+
+                state.defaultBars ||
+                500;
+
+
+            document.getElementById(
+                "agentCount"
+            ).value =
+
+                state.defaultAgents ||
+                5;
+
+
+            document.getElementById(
+                "workerCount"
+            ).value =
+
+                state.defaultWorkers ||
+                5;
+
+
+            updateWorkerLimit();
+
+
+            renderRunList();
+
+
+            if (
+                runs.length
+            ) {
+
+                await selectRun(
+                    runs[0].id
+                );
+
+            }
+
+            else {
+
+                document.getElementById(
+                    "content"
+                ).innerHTML = `
+
+
+            <div class="panel">
+
+
+                <div class="empty">
+
+                    No saved runs yet.
+
+                </div>
+
+
+            </div>
+
+
+        `;
+            }
+        }
+
+
+        /* ============================================================
+           EVENTS
+           ============================================================ */
+
+
+        window.addEventListener(
+            "pywebviewready",
+            init
+        );
+
+
+        document.addEventListener(
+
+            "keydown",
+
+            event => {
+
+
+                if (
+
+                    event.key === "Enter" &&
+
+                    [
+                        "ticker",
+                        "barLookback",
+                        "agentCount",
+                        "workerCount"
+                    ].includes(
+                        document.activeElement?.id
+                    )
+
+                ) {
+
+                    runAnalysis();
+                }
+
+            }
+        );
+
+
+    </script>
+
+
+</body>
+
+</html>
